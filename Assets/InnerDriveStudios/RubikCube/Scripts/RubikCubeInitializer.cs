@@ -1,5 +1,9 @@
-﻿using System;
+﻿using JetBrains.Annotations;
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -16,12 +20,26 @@ public class RubikCubeInitializer : MonoBehaviour
     
     private readonly int _dimensions = 3;
 
-    [Tooltip("Which prefab do we use for each cublet? Note that no matter whether we are using a centerpiece, edgepiece or cornerpiece, we use the same prefab for all of them.")]
+    [Tooltip("Prefab 1")]
     [SerializeField] 
-    private GameObject _cubletPrefab = null;
+    private GameObject _cubletPrefab1 = null;
+    [Tooltip("Prefab 2")]
+    [SerializeField]
+    private GameObject _cubletPrefab2 = null;
+    [Tooltip("Prefab 3")]
+    [SerializeField]
+    private GameObject _cubletPrefab3 = null;
+    [Tooltip("Prefab 4")]
+    [SerializeField]
+    private GameObject _cubletPrefab4 = null;
+    [Tooltip("Prefab 5")]
+    [SerializeField]
+    private GameObject _cubletPrefab5 = null;
+    [Tooltip("Prefab 6")]
+    [SerializeField]
+    private GameObject _cubletPrefab6 = null;
 
 
-    
     [Tooltip("Normally the side pieces of a real cube don't have stickers, would you like to hide those here as well?")]
     [SerializeField] 
     private bool hideInvisibleSides = true;
@@ -39,7 +57,7 @@ public class RubikCubeInitializer : MonoBehaviour
     private int _shuffleCount = 20;
 
     [SerializeField] 
-    private float _shuffleSpeed = 5;
+    private float _shuffleSpeed = 2.5f;
 
     // Reference to the actual cube and disc rotation script so that we can disable it when we solved the cube
     private RubikCube _rubikCube = null;
@@ -82,24 +100,66 @@ public class RubikCubeInitializer : MonoBehaviour
     public RubikCubeEvent OnCubeChanged;
     public RubikCubeEvent OnCubeSolved;
 
+    private List<GameObject> _cubletPrefabs;
+    private DiceCube _cube;
+    private int TEST_SIZE = 50000;
+
     // Start is called before the first frame update
     void Start()
     {
+        _cubletPrefabs = new()
+        { 
+            _cubletPrefab1,
+            _cubletPrefab2,
+            _cubletPrefab3,
+            _cubletPrefab4,
+            _cubletPrefab5,
+            _cubletPrefab6
+        };
+
         if (_cameraMouseOrbit != null)
 		{
             // Set up the basic zoom distance
             _baseDistance = _cameraMouseOrbit.targetDistance - RubikCube.Dimensions * _zoomFactorPerUnit;
 		}
 
-        SpawnNewCube();
+        _cube = new DiceCube();
+        
+        StartCoroutine(SpawnNewCube());
+
+        new Thread(() =>
+        {
+            int okCount = 0;
+
+            for (int i = 0; i < TEST_SIZE; i++)
+            {
+                DiceCube cube = new DiceCube();
+                bool completesRequirement = cube.GenerateRandomPath()
+                    .Rotate(_shuffleSpeed)
+                    .GetDotCountsOnDisks()
+                    .FindAll(v => v == 4)
+                    .Count()
+                    .Equals(3);
+
+                if (completesRequirement)
+                {
+                    okCount++;
+                }
+            }
+
+            double avg = (double)okCount / TEST_SIZE;
+
+            Debug.Log("Az esely " + TEST_SIZE + " db tesztesetre: " + avg);
+        }).Start();
     }
 
-	private void SpawnNewCube()
+	private IEnumerator SpawnNewCube()
 	{
         DestroyCurrentCubeIfPresent();
-
+        
         _rubikCube = Instantiate(_rubikCubePrefab, transform);
         _discRotator = _rubikCube.GetComponent<DiscRotator>();
+        _cube.SetCube(_rubikCube);
 
         // Make sure we show the local axis of the rubikcube in the top right
         if (_axisDisplay != null)
@@ -109,13 +169,25 @@ public class RubikCubeInitializer : MonoBehaviour
 
         OnNewCubeBeforeInitialize?.Invoke(_rubikCube);
         
-        _rubikCube.Initialize(_cubletPrefab, _maxHistorySize, hideInvisibleSides);
-        StartCoroutine(SetupCubeCoroutine());
+        _rubikCube.Initialize(_cubletPrefabs, _maxHistorySize, hideInvisibleSides);
 
         if (_cameraMouseOrbit != null)
 		{
             _cameraMouseOrbit.targetDistance = _baseDistance + RubikCube.Dimensions * _zoomFactorPerUnit;
 		}
+
+        int count = _cube.GenerateRandomPath()
+            .Rotate(_shuffleSpeed, true)
+            .GetDotCountsOnDisks()
+            .FindAll(v => v == 4)
+            .Count();
+
+        yield return new WaitForSeconds(4);
+
+        if (count != 3)
+        {
+            StartCoroutine(SpawnNewCube());
+        }
     }
 
     private void DestroyCurrentCubeIfPresent()
@@ -130,15 +202,6 @@ public class RubikCubeInitializer : MonoBehaviour
             OnCurrentCubeAfterDestroy?.Invoke();
 		}
 	}
-
-    private IEnumerator SetupCubeCoroutine()
-    {
-        yield return _rubikCube.ShuffleCoroutine(_shuffleOnStart?_shuffleCount:0, _shuffleSpeed);
-        _rubikCube.OnChanged += OnCubeChangedCallback;
-        _rubikCube.OnSolved += OnCubeSolvedCallback;
-
-        OnNewCubeAfterInitialize?.Invoke(_rubikCube);
-    }
 
     private void OnCubeChangedCallback()
     {
@@ -157,7 +220,7 @@ public class RubikCubeInitializer : MonoBehaviour
         Gizmos.DrawCube(transform.position, Vector3.one * _dimensions * 0.9f);
 	}
 
-    public void SetDiscRotationEnabled (bool pAllowDiscRotation)
+    public void SetDiscRotationEnabled(bool pAllowDiscRotation)
 	{
         if (_rubikCube != null)
 		{
@@ -185,7 +248,7 @@ public class RubikCubeInitializer : MonoBehaviour
         {
             if (Input.inputString == "r")
             {
-                SpawnNewCube();
+                StartCoroutine(SpawnNewCube());
             }
 		}
 	}

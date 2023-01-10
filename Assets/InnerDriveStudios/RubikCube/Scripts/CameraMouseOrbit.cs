@@ -28,7 +28,7 @@ public class CameraMouseOrbit : MonoBehaviour
     [Tooltip("How fast do we ease towards the target rotation?")]
     [SerializeField] private float _easeSpeed = 1;
     [Tooltip("What is the minimum and maximum tilt angle ?")]
-    [SerializeField] private Vector2 _xAngleRange = new Vector2(-30, 30);
+    [SerializeField] private Vector2 _xAngleRange = new(-30, 30);
 
     void Awake()
     {

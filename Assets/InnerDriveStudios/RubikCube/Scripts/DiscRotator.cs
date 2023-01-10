@@ -42,7 +42,7 @@ public class DiscRotator : MonoBehaviour
     
     [Tooltip("Toggle this to show/hide debug info. Note that it is better to leave this flag to true and comment out DEBUG_USER_INTENT_INTERPRETER at the top of this script.")]
     [SerializeField] private bool _generateDebugInfo = true;
-    private StringBuilder _debugInfo = new StringBuilder();
+    private readonly StringBuilder _debugInfo = new StringBuilder();
     private string _lastDebugInfo = "";
     private bool _debugDirty = false;
 
@@ -55,7 +55,7 @@ public class DiscRotator : MonoBehaviour
 	//reference to a plane instance that is 'active' while we are actually dragging the mouse on a cube side
 	//Since the cubecollider is limited in size and we want to be able to move the mouse 'outside'
 	//of that cube while still dragging
-	private Plane _collisionPlane = new Plane();
+	private Plane _collisionPlane = new();
 
 	//while we are dragging a disc we keep track of some instance values 
 	//a) because we need them initially, but b) also for debugging (some values could've been made local otherwise)
@@ -69,7 +69,7 @@ public class DiscRotator : MonoBehaviour
    
 	//Are we currently dragging a disc? 
 	//Basically if both rubikCube.isRotating and isDragging are false, we are leaving the cube alone
-	public bool isDragging { get; private set; }
+	public bool IsDragging { get; private set; }
 
     private void Awake()
     {
@@ -81,7 +81,7 @@ public class DiscRotator : MonoBehaviour
 
 		ClearLog();
 
-		isDragging = false;
+		IsDragging = false;
 	}
 
 	private void Update()
@@ -89,8 +89,8 @@ public class DiscRotator : MonoBehaviour
         //every update we clear the log so we can print info for the next merrygoround
         //if you disable the DEBUG_USER_INTENT_INTERPRETER compiler constant this will be compiled out
         ClearLog();
-        DebugLog("Is rotating? "+_rubikCube.IsDiscRotating+"\n");
-        DebugLog("Is dragging ? "+isDragging+"\n");
+        DebugLog("Is rotating? " + _rubikCube.IsDiscRotating + "\n");
+        DebugLog("Is dragging ? " + IsDragging + "\n");
 
         //None of the other methods refer to the Input class, so if you want to change the control triggers, 
         //should you be able to do (most of) that here:
@@ -104,21 +104,30 @@ public class DiscRotator : MonoBehaviour
         bool wantToScrollRotate = Input.mouseScrollDelta.y != 0;
 		bool scrollRotateIsClockWise = Input.mouseScrollDelta.y > 0;
 
-		//you see a lot of if(!isDragging && !_rubikCube.isDiscRotating .. below)
-		//the reason for the duplication is that every line after it may change that state,
-		//so you cannot just evaluate it once and store it, but have to reevaluate it every line instead
+        //you see a lot of if(!isDragging && !_rubikCube.isDiscRotating .. below)
+        //the reason for the duplication is that every line after it may change that state,
+        //so you cannot just evaluate it once and store it, but have to reevaluate it every line instead
 
-		if (!isDragging && !_rubikCube.IsDiscRotating && _undoEnabled && wantToUndo) _rubikCube.Undo(_undoDiscRotationSpeed);
-		if (!isDragging && !_rubikCube.IsDiscRotating && _dragRotateEnabled && wantToStartDragRotate) CheckDiscDragStart(raycastPosition);
-        if (!isDragging && !_rubikCube.IsDiscRotating && _scrollRotateEnabled && wantToScrollRotate) CheckMouseWheelDiscRotation(raycastPosition, scrollRotateIsClockWise);
+        if (!IsDragging && !_rubikCube.IsDiscRotating && _undoEnabled && wantToUndo)
+        {
+            _rubikCube.Undo(_undoDiscRotationSpeed);
+        }
+        if (!IsDragging && !_rubikCube.IsDiscRotating && _dragRotateEnabled && wantToStartDragRotate)
+        {
+            CheckDiscDragStart(raycastPosition);
+        }
+        if (!IsDragging && !_rubikCube.IsDiscRotating && _scrollRotateEnabled && wantToScrollRotate)
+        {
+            CheckMouseWheelDiscRotation(raycastPosition, scrollRotateIsClockWise);
+        }
 
-		if (isDragging && wantToKeepDragRotate)
+		if (IsDragging && wantToKeepDragRotate)
 		{
 			DoDiscDragInProgress(raycastPosition);
 		}
 		else
 		{
-			isDragging = false;
+			IsDragging = false;
 		}
     }
 
@@ -127,10 +136,9 @@ public class DiscRotator : MonoBehaviour
      */
     private void CheckDiscDragStart(Vector3 pRaycastTarget)
     {
-        RaycastHit hit;
         Ray ray = _camera.ScreenPointToRay(pRaycastTarget);
 
-        if (_cubeBoxCollider.Raycast(ray, out hit, Vector3.Distance(_camera.transform.position, transform.position) * 2))
+        if (_cubeBoxCollider.Raycast(ray, out RaycastHit hit, Vector3.Distance(_camera.transform.position, transform.position) * 2))
         {
             //get the normal of the side we hit relative to our own transform
             _startNormalInLocalSpace = transform.InverseTransformDirection(hit.normal);
@@ -167,7 +175,7 @@ public class DiscRotator : MonoBehaviour
                 _vAxis = Vector3.up;
             }
 
-			isDragging = true;
+			IsDragging = true;
         }
     }
 
@@ -181,10 +189,9 @@ public class DiscRotator : MonoBehaviour
         DebugLog("Start normal:" + _startNormalInLocalSpace + "\n");
         DebugLog("Start point:" + _startPointInLocalSpace + "\n");
 
-        float hit;
         Ray ray = _camera.ScreenPointToRay(pRaycastTarget);
 
-        if (_collisionPlane.Raycast(ray, out hit))
+        if (_collisionPlane.Raycast(ray, out float hit))
         {
             //start out by getting our current hit in our own local space (same as we did with the startPoint)
             Vector3 currentHitPointInMySpace = transform.InverseTransformPoint(ray.GetPoint(hit));
@@ -205,8 +212,7 @@ public class DiscRotator : MonoBehaviour
             if (Mathf.Max(absDistanceAlongU, absDistanceAlongV) < _discRotationDragThreshold) return;
 
             //if so, if we dragged furthest along the uAxis, we want to rotate over the vAxis and vice versa
-            Vector3 localRotationAxis = Vector3.zero;
-			localRotationAxis = absDistanceAlongU < absDistanceAlongV ? _uAxis : _vAxis;
+            Vector3 localRotationAxis = absDistanceAlongU < absDistanceAlongV ? _uAxis : _vAxis;
             DebugLog("Rotation axis:" + localRotationAxis + "\n");
 
 			//Ok, now that we have the rotation axis, we now have to calculate the INDEX of the disc we want to rotate.
@@ -248,7 +254,7 @@ public class DiscRotator : MonoBehaviour
             _rubikCube.RotateDisc(localRotationAxis, (int)discIndex, positive, _discRotationSpeed, true);
         } else
 		{
-			isDragging = false;
+			IsDragging = false;
 		}
     }
 
@@ -257,10 +263,9 @@ public class DiscRotator : MonoBehaviour
      */
     private void CheckMouseWheelDiscRotation(Vector3 pRaycastTarget, bool pClockWise)
     {
-        RaycastHit hit;
         Ray ray = _camera.ScreenPointToRay(pRaycastTarget);
 
-		if (_cubeBoxCollider.Raycast(ray, out hit, Vector3.Distance(_camera.transform.position, transform.position) * 2))
+        if (_cubeBoxCollider.Raycast(ray, out RaycastHit hit, Vector3.Distance(_camera.transform.position, transform.position) * 2))
 		{
             //first get the normal of the side we hit relative to our own transform
             _startNormalInLocalSpace = transform.InverseTransformDirection(hit.normal);

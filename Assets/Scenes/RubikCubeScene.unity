@@ -605,6 +605,42 @@ PrefabInstance:
         type: 3}
     - target: {fileID: 5100244822137463364, guid: 9fdb34c58e4434641a3f2fa24392c401,
         type: 3}
+      propertyPath: _cubletPrefab1
+      value: 
+      objectReference: {fileID: 851049134473544261, guid: a2b755d879b147446bcd773c464555a4,
+        type: 3}
+    - target: {fileID: 5100244822137463364, guid: 9fdb34c58e4434641a3f2fa24392c401,
+        type: 3}
+      propertyPath: _cubletPrefab2
+      value: 
+      objectReference: {fileID: 851049134473544261, guid: 75659d478eb6fff45982d12530c71fc1,
+        type: 3}
+    - target: {fileID: 5100244822137463364, guid: 9fdb34c58e4434641a3f2fa24392c401,
+        type: 3}
+      propertyPath: _cubletPrefab3
+      value: 
+      objectReference: {fileID: 851049134473544261, guid: 820201e70c2e42340914425810ddb301,
+        type: 3}
+    - target: {fileID: 5100244822137463364, guid: 9fdb34c58e4434641a3f2fa24392c401,
+        type: 3}
+      propertyPath: _cubletPrefab4
+      value: 
+      objectReference: {fileID: 851049134473544261, guid: d2481c17dd39d47479451348fc3098f4,
+        type: 3}
+    - target: {fileID: 5100244822137463364, guid: 9fdb34c58e4434641a3f2fa24392c401,
+        type: 3}
+      propertyPath: _cubletPrefab5
+      value: 
+      objectReference: {fileID: 851049134473544261, guid: 93d3c51b1a4c0de46918f77b1403daad,
+        type: 3}
+    - target: {fileID: 5100244822137463364, guid: 9fdb34c58e4434641a3f2fa24392c401,
+        type: 3}
+      propertyPath: _cubletPrefab6
+      value: 
+      objectReference: {fileID: 851049134473544261, guid: 715496ce602429647a243205ba824ea4,
+        type: 3}
+    - target: {fileID: 5100244822137463364, guid: 9fdb34c58e4434641a3f2fa24392c401,
+        type: 3}
       propertyPath: _shuffleOnStart
       value: 0
       objectReference: {fileID: 0}
